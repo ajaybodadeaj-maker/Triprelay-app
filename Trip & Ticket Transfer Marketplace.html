@@ -1,0 +1,1027 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TripRelay - Peer-to-Peer Trip & Ticket Transfer Marketplace</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons CDN -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            50: '#eef2ff',
+                            100: '#e0e7ff',
+                            500: '#6366f1',
+                            600: '#4f46e5',
+                            700: '#4338ca',
+                            900: '#312e81',
+                        },
+                        accent: {
+                            400: '#38bdf8',
+                            500: '#0ea5e9',
+                            600: '#0284c7',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .glass-nav {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(12px);
+        }
+        .card-hover {
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .card-hover:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 24px -10px rgba(79, 70, 229, 0.15);
+        }
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans antialiased min-h-screen flex flex-col">
+
+    <!-- Toast Notification Container -->
+    <div id="toast-container" class="fixed top-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+    <!-- Navigation Bar -->
+    <nav class="sticky top-0 z-40 glass-nav border-b border-slate-200">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <!-- Logo -->
+                <div class="flex items-center gap-2 cursor-pointer" onclick="switchTab('browse')">
+                    <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-brand-600 to-accent-400 flex items-center justify-center text-white text-xl font-black shadow-lg shadow-brand-500/30">
+                        <i class="fa-solid fa-arrows-rotate"></i>
+                    </div>
+                    <div>
+                        <span class="text-xl font-extrabold bg-gradient-to-r from-brand-600 to-accent-600 bg-clip-text text-transparent">TripRelay</span>
+                        <span class="hidden sm:inline-block text-xs font-semibold px-2 py-0.5 ml-2 bg-emerald-100 text-emerald-700 rounded-full">Save & Transfer</span>
+                    </div>
+                </div>
+
+                <!-- Desktop Nav Tabs -->
+                <div class="hidden md:flex items-center space-x-1">
+                    <button id="nav-browse" onclick="switchTab('browse')" class="nav-btn px-4 py-2 rounded-lg font-medium text-sm transition-colors text-brand-600 bg-brand-50">
+                        <i class="fa-solid fa-compass mr-1.5"></i> Browse Deals
+                    </button>
+                    <button id="nav-list" onclick="switchTab('list')" class="nav-btn px-4 py-2 rounded-lg font-medium text-sm transition-colors text-slate-600 hover:text-brand-600 hover:bg-slate-100">
+                        <i class="fa-solid fa-plus-circle mr-1.5"></i> List Unused Booking
+                    </button>
+                    <button id="nav-how" onclick="switchTab('how')" class="nav-btn px-4 py-2 rounded-lg font-medium text-sm transition-colors text-slate-600 hover:text-brand-600 hover:bg-slate-100">
+                        <i class="fa-solid fa-shield-halved mr-1.5"></i> How It Works
+                    </button>
+                    <button id="nav-profile" onclick="switchTab('profile')" class="nav-btn px-4 py-2 rounded-lg font-medium text-sm transition-colors text-slate-600 hover:text-brand-600 hover:bg-slate-100">
+                        <i class="fa-solid fa-user mr-1.5"></i> My Account
+                    </button>
+                </div>
+
+                <!-- Action CTA -->
+                <div class="flex items-center gap-3">
+                    <button onclick="switchTab('list')" class="bg-gradient-to-r from-brand-600 to-brand-700 hover:from-brand-700 hover:to-brand-900 text-white px-4 py-2 rounded-lg font-semibold text-sm shadow-md shadow-brand-500/20 transition-all flex items-center gap-1.5">
+                        <i class="fa-solid fa-tag"></i>
+                        <span>Sell Ticket</span>
+                    </button>
+                    
+                    <!-- Mobile Menu Button -->
+                    <button id="mobile-menu-btn" onclick="toggleMobileMenu()" class="md:hidden p-2 rounded-lg text-slate-600 hover:bg-slate-100">
+                        <i class="fa-solid fa-bars text-xl"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Mobile Navigation Menu -->
+        <div id="mobile-menu" class="hidden md:hidden border-t border-slate-200 bg-white px-4 pt-2 pb-4 space-y-2">
+            <button onclick="switchTab('browse'); toggleMobileMenu()" class="w-full text-left px-3 py-2.5 rounded-md text-slate-700 font-medium hover:bg-brand-50 hover:text-brand-600 flex items-center gap-3">
+                <i class="fa-solid fa-compass text-brand-500"></i> Browse Deals
+            </button>
+            <button onclick="switchTab('list'); toggleMobileMenu()" class="w-full text-left px-3 py-2.5 rounded-md text-slate-700 font-medium hover:bg-brand-50 hover:text-brand-600 flex items-center gap-3">
+                <i class="fa-solid fa-plus-circle text-brand-500"></i> List Unused Booking
+            </button>
+            <button onclick="switchTab('how'); toggleMobileMenu()" class="w-full text-left px-3 py-2.5 rounded-md text-slate-700 font-medium hover:bg-brand-50 hover:text-brand-600 flex items-center gap-3">
+                <i class="fa-solid fa-shield-halved text-brand-500"></i> How It Works
+            </button>
+            <button onclick="switchTab('profile'); toggleMobileMenu()" class="w-full text-left px-3 py-2.5 rounded-md text-slate-700 font-medium hover:bg-brand-50 hover:text-brand-600 flex items-center gap-3">
+                <i class="fa-solid fa-user text-brand-500"></i> My Account
+            </button>
+        </div>
+    </nav>
+
+    <!-- Main Content Container -->
+    <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
+
+        <!-- ================= SECTION 1: BROWSE DEALS (DASHBOARD) ================= -->
+        <section id="section-browse" class="tab-section space-y-8">
+            
+            <!-- Hero Banner & Stats Summary -->
+            <div class="relative overflow-hidden rounded-3xl bg-gradient-to-r from-brand-900 via-brand-700 to-indigo-800 text-white p-6 sm:p-10 shadow-xl">
+                <div class="absolute -right-10 -bottom-10 opacity-10 text-9xl">
+                    <i class="fa-solid fa-plane-departure"></i>
+                </div>
+                <div class="relative z-10 max-w-2xl">
+                    <span class="inline-block px-3 py-1 bg-white/10 backdrop-blur-md rounded-full text-xs font-semibold text-accent-400 mb-3 border border-white/20">
+                        ⚡ Cancelled Plans? Don't Lose Money!
+                    </span>
+                    <h1 class="text-3xl sm:text-4xl font-extrabold tracking-tight mb-3">
+                        Transfer Unused Bookings. <br><span class="text-accent-400">Save Someone's Trip.</span>
+                    </h1>
+                    <p class="text-slate-200 text-sm sm:text-base leading-relaxed mb-6">
+                        Trip cancel ho gayi? Loss mat saho! Sell your non-refundable hotel stays, bus passes, and concert tickets directly to buyers at zero extra loss.
+                    </p>
+                </div>
+
+                <!-- Stats Counter Bar -->
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6 pt-6 border-t border-white/10 relative z-10">
+                    <div class="bg-white/10 backdrop-blur-sm p-3.5 rounded-2xl border border-white/10">
+                        <div class="text-xs text-slate-300 font-medium">Active Transfers</div>
+                        <div class="text-2xl font-bold text-white mt-0.5" id="stat-active-count">14</div>
+                    </div>
+                    <div class="bg-white/10 backdrop-blur-sm p-3.5 rounded-2xl border border-white/10">
+                        <div class="text-xs text-slate-300 font-medium">Total Saved</div>
+                        <div class="text-2xl font-bold text-emerald-400 mt-0.5">₹3.45 Lakhs</div>
+                    </div>
+                    <div class="bg-white/10 backdrop-blur-sm p-3.5 rounded-2xl border border-white/10">
+                        <div class="text-xs text-slate-300 font-medium">Successful Transfers</div>
+                        <div class="text-2xl font-bold text-accent-400 mt-0.5">320+</div>
+                    </div>
+                    <div class="bg-white/10 backdrop-blur-sm p-3.5 rounded-2xl border border-white/10">
+                        <div class="text-xs text-slate-300 font-medium">Escrow Protection</div>
+                        <div class="text-2xl font-bold text-amber-300 mt-0.5">100% Safe</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Search & Filters Toolbar -->
+            <div class="bg-white p-4 sm:p-5 rounded-2xl shadow-sm border border-slate-200 space-y-4">
+                <div class="flex flex-col md:flex-row gap-3">
+                    <!-- Text Search -->
+                    <div class="relative flex-grow">
+                        <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-3.5 text-slate-400"></i>
+                        <input type="text" id="search-input" oninput="applyFilters()" placeholder="Search by city, hotel, route or event..." class="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white transition-all">
+                    </div>
+
+                    <!-- Category Filter dropdown -->
+                    <div class="w-full md:w-48">
+                        <select id="category-filter" onchange="applyFilters()" class="w-full py-2.5 px-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white transition-all text-slate-700">
+                            <option value="All">All Categories</option>
+                            <option value="Hotel">🏨 Hotels & Resorts</option>
+                            <option value="Bus">🚌 Bus Tickets</option>
+                            <option value="Flight">✈️ Flights / Vouchers</option>
+                            <option value="Event">🎟️ Events & Concerts</option>
+                            <option value="Package">🏖️ Holiday Packages</option>
+                        </select>
+                    </div>
+
+                    <!-- Max Price Slider -->
+                    <div class="w-full md:w-64 bg-slate-50 border border-slate-200 p-2.5 rounded-xl flex flex-col justify-center px-4">
+                        <div class="flex justify-between items-center text-xs font-semibold text-slate-600 mb-1">
+                            <span>Max Price:</span>
+                            <span id="price-limit-val" class="text-brand-600 font-bold">₹25,000</span>
+                        </div>
+                        <input type="range" id="price-filter" min="500" max="30000" step="500" value="30000" oninput="updatePriceLabel(this.value); applyFilters();" class="w-full accent-brand-600 h-1.5 bg-slate-200 rounded-lg cursor-pointer">
+                    </div>
+                </div>
+
+                <!-- Quick Category Pill Tags -->
+                <div class="flex flex-wrap items-center gap-2 pt-2 border-t border-slate-100">
+                    <span class="text-xs font-semibold text-slate-400 mr-1">Quick Filters:</span>
+                    <button onclick="setCategoryPill('All')" class="category-pill active text-xs font-medium px-3 py-1.5 rounded-full bg-brand-600 text-white transition-colors">All</button>
+                    <button onclick="setCategoryPill('Hotel')" class="category-pill text-xs font-medium px-3 py-1.5 rounded-full bg-slate-100 text-slate-600 hover:bg-slate-200 transition-colors">🏨 Hotels</button>
+                    <button onclick="setCategoryPill('Bus')" class="category-pill text-xs font-medium px-3 py-1.5 rounded-full bg-slate-100 text-slate-600 hover:bg-slate-200 transition-colors">🚌 Buses</button>
+                    <button onclick="setCategoryPill('Event')" class="category-pill text-xs font-medium px-3 py-1.5 rounded-full bg-slate-100 text-slate-600 hover:bg-slate-200 transition-colors">🎟️ Events</button>
+                    <button onclick="setCategoryPill('Package')" class="category-pill text-xs font-medium px-3 py-1.5 rounded-full bg-slate-100 text-slate-600 hover:bg-slate-200 transition-colors">🏖️ Packages</button>
+                </div>
+            </div>
+
+            <!-- Feed Section Header -->
+            <div class="flex justify-between items-center">
+                <h2 class="text-xl font-bold text-slate-900 flex items-center gap-2">
+                    <span>Available Transfers</span>
+                    <span id="results-count" class="text-xs font-bold px-2.5 py-1 bg-brand-100 text-brand-700 rounded-full">5 Available</span>
+                </h2>
+                <span class="text-xs text-slate-500 font-medium"><i class="fa-solid fa-lock text-emerald-500 mr-1"></i> Verified & Transferable</span>
+            </div>
+
+            <!-- Dynamic Listings Grid -->
+            <div id="listings-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- Javascript will inject listing cards here -->
+            </div>
+
+            <!-- Empty State -->
+            <div id="empty-state" class="hidden text-center py-12 bg-white rounded-2xl border border-dashed border-slate-300">
+                <div class="w-16 h-16 bg-slate-100 text-slate-400 rounded-full flex items-center justify-center mx-auto mb-3 text-2xl">
+                    <i class="fa-solid fa-magnifying-glass font-light"></i>
+                </div>
+                <h3 class="text-lg font-bold text-slate-700">No matching transfers found</h3>
+                <p class="text-slate-500 text-sm mt-1 max-w-md mx-auto">Try adjusting your category filter, price limit, or search keywords to see more options.</p>
+                <button onclick="resetFilters()" class="mt-4 px-4 py-2 text-sm bg-brand-50 text-brand-600 font-semibold rounded-lg hover:bg-brand-100 transition-colors">Reset Filters</button>
+            </div>
+        </section>
+
+        <!-- ================= SECTION 2: LIST YOUR UNUSED BOOKING ================= -->
+        <section id="section-list" class="tab-section hidden max-w-3xl mx-auto space-y-6">
+            <div class="bg-white p-6 sm:p-8 rounded-3xl shadow-sm border border-slate-200">
+                <div class="border-b border-slate-100 pb-5 mb-6">
+                    <span class="text-xs font-extrabold text-brand-600 uppercase tracking-wider">Sell & Save</span>
+                    <h2 class="text-2xl font-extrabold text-slate-900 mt-1">List Your Unused / Cancelled Booking</h2>
+                    <p class="text-slate-500 text-sm mt-1">Fill out the details below. We will display it to hundreds of interested buyers.</p>
+                </div>
+
+                <form id="listing-form" onsubmit="handleFormSubmit(event)" class="space-y-6">
+                    <!-- Title -->
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Listing Title / Name *</label>
+                        <input type="text" id="form-title" required placeholder="e.g. 2 Nights Stay at Taj Fort Aguada or Pune-Mumbai Volvo Sleeper" class="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-brand-500 focus:outline-none transition-all">
+                    </div>
+
+                    <!-- Category & Travel Date -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Category *</label>
+                            <select id="form-category" required class="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-brand-500 focus:outline-none transition-all text-slate-700 font-medium">
+                                <option value="" disabled selected>Select Category</option>
+                                <option value="Hotel">🏨 Hotel / Resort Stay</option>
+                                <option value="Bus">🚌 Bus Ticket</option>
+                                <option value="Flight">✈️ Flight Voucher / Ticket</option>
+                                <option value="Event">🎟️ Concert / Event Pass</option>
+                                <option value="Package">🏖️ Tour Package</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Travel / Booking Date *</label>
+                            <input type="date" id="form-date" required class="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-brand-500 focus:outline-none transition-all text-slate-700">
+                        </div>
+                    </div>
+
+                    <!-- Route / Destination -->
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Location / Route Details *</label>
+                        <input type="text" id="form-location" required placeholder="e.g. North Goa or From Pune to Mumbai (Kharghar Drop)" class="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-brand-500 focus:outline-none transition-all">
+                    </div>
+
+                    <!-- Pricing & Calculation -->
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 bg-slate-50 p-4 rounded-2xl border border-slate-200">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-600 mb-1">Original Paid Price (₹) *</label>
+                            <input type="number" id="form-orig-price" required min="100" placeholder="e.g. 8000" oninput="calculateDiscount()" class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-600 mb-1">Selling Price (₹) *</label>
+                            <input type="number" id="form-sell-price" required min="100" placeholder="e.g. 5000" oninput="calculateDiscount()" class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-600 mb-1">Estimated Discount</label>
+                            <div id="form-discount-badge" class="h-10 px-3 bg-slate-200 rounded-lg text-xs font-bold text-slate-600 flex items-center justify-center">
+                                0% OFF
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Transfer Policy & Verification Status -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Transferability Type *</label>
+                            <select id="form-transfer-type" required class="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                                <option value="Easy Name Change">Instant Name Update Available</option>
+                                <option value="Guest Authorization">Guest Entry / Auth Letter Provided</option>
+                                <option value="Physical Pass / QR">Digital Ticket QR Code Share</option>
+                                <option value="Family Transfer">Official Transfer via Desk</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Seller Contact (WhatsApp / Phone) *</label>
+                            <input type="text" id="form-contact" required placeholder="e.g. +91 98765 43210" class="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                        </div>
+                    </div>
+
+                    <!-- Additional Details -->
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Notes / Reason for Selling</label>
+                        <textarea id="form-notes" rows="3" placeholder="Explain why you are selling and any inclusions (e.g. Breakfast included, AC Sleeper Berth, VIP pass)..." class="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-brand-500 focus:outline-none"></textarea>
+                    </div>
+
+                    <!-- Verification Mock Checkbox -->
+                    <div class="flex items-start gap-3 p-4 bg-emerald-50 border border-emerald-200 rounded-xl">
+                        <input type="checkbox" id="form-verify" required class="mt-1 w-4 h-4 text-brand-600 rounded border-slate-300 focus:ring-brand-500 cursor-pointer">
+                        <label for="form-verify" class="text-xs text-emerald-900 leading-relaxed cursor-pointer">
+                            I confirm that this booking is genuine, valid, and I hold the authorization to transfer or share access as permitted under platform terms.
+                        </label>
+                    </div>
+
+                    <!-- Submit Button -->
+                    <button type="submit" class="w-full py-3.5 bg-brand-600 hover:bg-brand-700 text-white font-bold rounded-xl shadow-lg shadow-brand-500/25 transition-all text-base flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-paper-plane"></i>
+                        <span>Publish Transfer Listing Now</span>
+                    </button>
+                </form>
+            </div>
+        </section>
+
+        <!-- ================= SECTION 3: HOW IT WORKS ================= -->
+        <section id="section-how" class="tab-section hidden max-w-4xl mx-auto space-y-8">
+            <div class="text-center space-y-3">
+                <span class="px-3 py-1 bg-brand-100 text-brand-700 font-bold text-xs rounded-full">Safe Escrow Architecture</span>
+                <h2 class="text-3xl font-extrabold text-slate-900">How TripRelay Protects Buyers & Sellers</h2>
+                <p class="text-slate-500 text-base max-w-2xl mx-auto">No scams, no zero-refund heartbreaks. Here is our 4-step secure transfer protocol.</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-6 relative">
+                <!-- Step 1 -->
+                <div class="bg-white p-6 rounded-2xl border border-slate-200 text-center relative z-10 space-y-3">
+                    <div class="w-12 h-12 bg-brand-100 text-brand-600 font-black rounded-2xl flex items-center justify-center text-xl mx-auto">1</div>
+                    <h3 class="font-bold text-slate-900">Post Booking</h3>
+                    <p class="text-xs text-slate-500 leading-relaxed">Seller posts their non-refundable booking along with verification proof & discount.</p>
+                </div>
+
+                <!-- Step 2 -->
+                <div class="bg-white p-6 rounded-2xl border border-slate-200 text-center relative z-10 space-y-3">
+                    <div class="w-12 h-12 bg-amber-100 text-amber-600 font-black rounded-2xl flex items-center justify-center text-xl mx-auto">2</div>
+                    <h3 class="font-bold text-slate-900">Escrow Payment</h3>
+                    <p class="text-xs text-slate-500 leading-relaxed">Buyer claims the deal. Funds are locked securely in TripRelay Escrow vault.</p>
+                </div>
+
+                <!-- Step 3 -->
+                <div class="bg-white p-6 rounded-2xl border border-slate-200 text-center relative z-10 space-y-3">
+                    <div class="w-12 h-12 bg-sky-100 text-sky-600 font-black rounded-2xl flex items-center justify-center text-xl mx-auto">3</div>
+                    <h3 class="font-bold text-slate-900">Name Transfer</h3>
+                    <p class="text-xs text-slate-500 leading-relaxed">Seller updates guest name / passes authorization email to buyer.</p>
+                </div>
+
+                <!-- Step 4 -->
+                <div class="bg-white p-6 rounded-2xl border border-slate-200 text-center relative z-10 space-y-3">
+                    <div class="w-12 h-12 bg-emerald-100 text-emerald-600 font-black rounded-2xl flex items-center justify-center text-xl mx-auto">4</div>
+                    <h3 class="font-bold text-slate-900">Funds Released</h3>
+                    <p class="text-xs text-slate-500 leading-relaxed">Once buyer confirms booking validity at check-in/travel, payment is released to seller.</p>
+                </div>
+            </div>
+
+            <!-- Transfer Policy Guide Table -->
+            <div class="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-sm space-y-4">
+                <h3 class="text-lg font-bold text-slate-900 flex items-center gap-2">
+                    <i class="fa-solid fa-circle-info text-brand-600"></i> Transferability Guidelines by Booking Type
+                </h3>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse text-xs sm:text-sm">
+                        <thead>
+                            <tr class="border-b border-slate-200 bg-slate-50 text-slate-600">
+                                <th class="p-3">Category</th>
+                                <th class="p-3">Ease of Transfer</th>
+                                <th class="p-3">Standard Process</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100 text-slate-700">
+                            <tr>
+                                <td class="p-3 font-semibold">🏨 Hotels & Resorts</td>
+                                <td class="p-3"><span class="px-2 py-0.5 bg-emerald-100 text-emerald-700 rounded-md font-bold text-xs">Very Easy</span></td>
+                                <td class="p-3">Hotel desk allows primary guest name update or secondary guest authorization letter.</td>
+                            </tr>
+                            <tr>
+                                <td class="p-3 font-semibold">🚌 Bus Tickets</td>
+                                <td class="p-3"><span class="px-2 py-0.5 bg-emerald-100 text-emerald-700 rounded-md font-bold text-xs">Very Easy</span></td>
+                                <td class="p-3">Private operators (RedBus/VRL) allow passenger mobile/SMS pass sharing.</td>
+                            </tr>
+                            <tr>
+                                <td class="p-3 font-semibold">🎟️ Events & Concerts</td>
+                                <td class="p-3"><span class="px-2 py-0.5 bg-emerald-100 text-emerald-700 rounded-md font-bold text-xs">Instant</span></td>
+                                <td class="p-3">E-ticket QR transfer via BookMyShow/Insider app or physical wristband pickup.</td>
+                            </tr>
+                            <tr>
+                                <td class="p-3 font-semibold">✈️ Flight Vouchers</td>
+                                <td class="p-3"><span class="px-2 py-0.5 bg-amber-100 text-amber-700 rounded-md font-bold text-xs">Moderate</span></td>
+                                <td class="p-3">Airline gift cards or credit shells transferable to any passenger name.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= SECTION 4: MY PROFILE / LISTINGS ================= -->
+        <section id="section-profile" class="tab-section hidden max-w-4xl mx-auto space-y-6">
+            <div class="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm flex flex-col sm:flex-row items-center gap-6">
+                <div class="w-20 h-20 rounded-full bg-brand-100 text-brand-700 flex items-center justify-center text-3xl font-black border-4 border-white shadow-md">
+                    RK
+                </div>
+                <div class="text-center sm:text-left space-y-1">
+                    <div class="flex items-center justify-center sm:justify-start gap-2">
+                        <h2 class="text-xl font-bold text-slate-900">Rohit Kumar</h2>
+                        <span class="px-2 py-0.5 bg-emerald-100 text-emerald-700 rounded-full text-xs font-bold"><i class="fa-solid fa-check-circle"></i> ID Verified</span>
+                    </div>
+                    <p class="text-slate-500 text-xs">Member since Jan 2025 • Rating: ⭐ 4.9 (8 successful transfers)</p>
+                    <div class="flex flex-wrap gap-2 pt-1">
+                        <span class="text-xs bg-slate-100 text-slate-600 px-2.5 py-1 rounded-md">📱 +91 98*** **321</span>
+                        <span class="text-xs bg-slate-100 text-slate-600 px-2.5 py-1 rounded-md">📧 rohit***@gmail.com</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- User's Posted Listings -->
+            <div class="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm space-y-4">
+                <h3 class="text-lg font-bold text-slate-900">My Posted Listings</h3>
+                <div id="my-listings-container" class="space-y-3">
+                    <!-- Javascript populates user listings or empty state -->
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-slate-900 text-slate-400 py-8 border-t border-slate-800 mt-12">
+        <div class="max-w-7xl mx-auto px-4 text-center text-xs space-y-2">
+            <p class="font-medium text-slate-300">TripRelay Peer-to-Peer Booking Transfer Platform</p>
+            <p>© 2026 TripRelay Inc. All rights reserved. Helping travelers eliminate non-refundable trip losses securely.</p>
+        </div>
+    </footer>
+
+    <!-- ================= MODAL: DETAIL & CLAIM ESCROW SIMULATOR ================= -->
+    <div id="claim-modal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm hidden flex items-center justify-center p-4 overflow-y-auto">
+        <div class="bg-white w-full max-w-xl rounded-3xl shadow-2xl overflow-hidden border border-slate-100 animate-in fade-in zoom-in duration-200 my-8">
+            
+            <!-- Modal Header -->
+            <div class="bg-slate-900 text-white p-6 relative">
+                <button onclick="closeClaimModal()" class="absolute top-5 right-5 w-8 h-8 bg-white/10 hover:bg-white/20 rounded-full flex items-center justify-center text-slate-300 transition-colors">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+                <span id="modal-category-badge" class="px-2.5 py-1 bg-brand-500 text-white font-bold text-xs rounded-full">Hotel</span>
+                <h3 id="modal-title" class="text-xl font-bold mt-2 pr-8">Taj Fort Aguada Resort Stay</h3>
+                <p id="modal-location" class="text-xs text-slate-300 mt-1"><i class="fa-solid fa-location-dot text-red-400 mr-1"></i> North Goa</p>
+            </div>
+
+            <div class="p-6 space-y-6">
+                <!-- Pricing Breakdown Box -->
+                <div class="bg-slate-50 p-4 rounded-2xl border border-slate-200 flex justify-between items-center">
+                    <div>
+                        <div class="text-xs text-slate-500 font-medium">Original Price</div>
+                        <div id="modal-orig-price" class="text-sm line-through text-slate-400 font-semibold">₹12,000</div>
+                    </div>
+                    <div class="text-right">
+                        <div class="text-xs text-slate-500 font-medium">Transfer Price</div>
+                        <div id="modal-sell-price" class="text-2xl font-black text-emerald-600">₹7,500</div>
+                    </div>
+                    <div id="modal-discount" class="bg-emerald-100 text-emerald-800 text-xs font-bold px-3 py-1.5 rounded-xl">
+                        37% OFF
+                    </div>
+                </div>
+
+                <!-- Seller Info -->
+                <div class="flex items-center justify-between p-3.5 bg-brand-50/50 rounded-xl border border-brand-100">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-full bg-brand-600 text-white font-bold flex items-center justify-center text-sm">
+                            <i class="fa-solid fa-user-check"></i>
+                        </div>
+                        <div>
+                            <div id="modal-seller-name" class="text-sm font-bold text-slate-900">Verified Seller</div>
+                            <div class="text-xs text-slate-500">TripRelay Trust Rating ⭐ 4.9/5</div>
+                        </div>
+                    </div>
+                    <button onclick="simulateSellerChat()" class="px-3 py-1.5 bg-white border border-brand-200 text-brand-600 hover:bg-brand-50 font-semibold rounded-lg text-xs transition-colors flex items-center gap-1.5">
+                        <i class="fa-solid fa-comments"></i> Chat
+                    </button>
+                </div>
+
+                <!-- Escrow Progress Steps Indicator -->
+                <div class="space-y-2">
+                    <div class="text-xs font-bold text-slate-700 uppercase tracking-wider flex justify-between">
+                        <span>Transfer & Escrow Process</span>
+                        <span id="escrow-step-text" class="text-brand-600">Step 1 of 3</span>
+                    </div>
+
+                    <!-- Step Indicators Bar -->
+                    <div class="grid grid-cols-3 gap-2">
+                        <div id="step-bar-1" class="h-2 rounded-full bg-brand-600 transition-colors"></div>
+                        <div id="step-bar-2" class="h-2 rounded-full bg-slate-200 transition-colors"></div>
+                        <div id="step-bar-3" class="h-2 rounded-full bg-slate-200 transition-colors"></div>
+                    </div>
+                </div>
+
+                <!-- Interactive Step Container -->
+                <div id="escrow-step-content" class="bg-slate-50 p-4 rounded-2xl border border-slate-200 text-sm">
+                    <!-- Step 1 View -->
+                    <div id="step-1-view" class="space-y-3">
+                        <p class="text-xs text-slate-600 leading-relaxed">
+                            <i class="fa-solid fa-shield text-emerald-500 mr-1"></i> Your payment will be held safely in <strong>TripRelay Escrow</strong>. The seller will not receive funds until you confirm the booking name transfer is successfully completed.
+                        </p>
+                        <button onclick="advanceEscrowStep(2)" class="w-full py-3 bg-brand-600 hover:bg-brand-700 text-white font-bold rounded-xl shadow-md transition-all text-sm flex items-center justify-center gap-2">
+                            <span>Proceed to Lock Funds in Escrow</span>
+                            <i class="fa-solid fa-arrow-right"></i>
+                        </button>
+                    </div>
+
+                    <!-- Step 2 View -->
+                    <div id="step-2-view" class="hidden space-y-3">
+                        <div class="flex items-center gap-2 text-emerald-700 font-bold text-xs bg-emerald-100 p-2.5 rounded-lg">
+                            <i class="fa-solid fa-circle-check text-base"></i>
+                            <span>Funds Locked in Escrow (₹<span id="escrow-locked-amt">0</span>)</span>
+                        </div>
+                        <p class="text-xs text-slate-600 leading-relaxed">
+                            Seller has been notified to initiate Guest Name Update / Pass Transfer. Once you receive the updated ticket copy or hotel confirmation code, click below.
+                        </p>
+                        <button onclick="advanceEscrowStep(3)" class="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-md transition-all text-sm flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-signature"></i>
+                            <span>Confirm Ticket Transfer Received</span>
+                        </button>
+                    </div>
+
+                    <!-- Step 3 View -->
+                    <div id="step-3-view" class="hidden space-y-3 text-center py-2">
+                        <div class="w-12 h-12 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center text-2xl mx-auto">
+                            <i class="fa-solid fa-circle-check"></i>
+                        </div>
+                        <h4 class="font-bold text-slate-900 text-base">Transfer Completed Successfully!</h4>
+                        <p class="text-xs text-slate-500 max-w-sm mx-auto">
+                            The funds have been released to the seller. You can now enjoy your trip with full peace of mind!
+                        </p>
+                        <button onclick="closeClaimModal()" class="px-6 py-2.5 bg-slate-900 text-white font-bold rounded-xl text-xs hover:bg-slate-800 transition-all">
+                            Close Window
+                        </button>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+
+    <!-- ================= JAVASCRIPT LOGIC ================= -->
+    <script>
+        // Sample Initial Listings Database (Indian Context)
+        let sampleListings = [
+            {
+                id: 'trip-101',
+                title: '2 Nights Deluxe Room at Taj Fort Aguada Resort',
+                category: 'Hotel',
+                location: 'Goa (Candolim)',
+                date: '2026-11-12',
+                origPrice: 18500,
+                sellPrice: 11000,
+                transferType: 'Easy Name Change',
+                sellerName: 'Vikramaditya S.',
+                contact: '+91 98200 11223',
+                notes: 'Breakfast included. Cannot travel due to emergency work meeting. Hotel confirmed name transfer allowed.',
+                verified: true
+            },
+            {
+                id: 'trip-102',
+                title: 'Pune to Mumbai Volvo AC Multi-Axle Sleeper (2 Seats)',
+                category: 'Bus',
+                location: 'From Pune (Swargate) to Mumbai (Dadark)',
+                date: '2026-11-05',
+                origPrice: 2400,
+                sellPrice: 1400,
+                transferType: 'Guest Authorization',
+                sellerName: 'Priya Sharma',
+                contact: '+91 97654 32109',
+                notes: 'Upper sleeper double berth. Bus leaves Swargate at 11:00 PM.',
+                verified: true
+            },
+            {
+                id: 'trip-103',
+                title: 'Arijit Singh Live Concert VIP Front Zone Ticket',
+                category: 'Event',
+                location: 'JL Stadium, Delhi NCR',
+                date: '2026-12-01',
+                origPrice: 7500,
+                sellPrice: 5200,
+                transferType: 'Physical Pass / QR',
+                sellerName: 'Aman Verma',
+                contact: '+91 99112 88776',
+                notes: 'Digital ticket QR will be shared instantly via BookMyShow transfer link.',
+                verified: true
+            },
+            {
+                id: 'trip-104',
+                title: '3 Days Luxury Beach Resort Voucher - Neill Island',
+                category: 'Package',
+                location: 'Andaman & Nicobar Islands',
+                date: '2026-11-20',
+                origPrice: 28000,
+                sellPrice: 17500,
+                transferType: 'Family Transfer',
+                sellerName: 'Rohan Mehra',
+                contact: '+91 94110 55443',
+                notes: 'Open voucher transferable to any guest name. Valid till Dec 2026.',
+                verified: true
+            },
+            {
+                id: 'trip-105',
+                title: 'IndiGo Flight Credit Shell Voucher (Value ₹10,000)',
+                category: 'Flight',
+                location: 'Any Domestic Route',
+                date: '2026-12-15',
+                origPrice: 10000,
+                sellPrice: 7800,
+                transferType: 'Easy Name Change',
+                sellerName: 'Neha Gupta',
+                contact: '+91 98760 12345',
+                notes: 'Can be redeemed for booking any IndiGo flight for any passenger.',
+                verified: true
+            }
+        ];
+
+        let activeCategoryFilter = 'All';
+        let currentModalItem = null;
+
+        // Initialize App on DOM Ready
+        window.addEventListener('DOMContentLoaded', () => {
+            renderListings(sampleListings);
+            renderMyListings();
+            updateStats();
+        });
+
+        // Tab Switching Logic
+        function switchTab(tabId) {
+            // Hide all tabs
+            document.querySelectorAll('.tab-section').forEach(sec => sec.classList.add('hidden'));
+            
+            // Show target section
+            const target = document.getElementById(`section-${tabId}`);
+            if (target) target.classList.remove('hidden');
+
+            // Update Nav Active State
+            document.querySelectorAll('.nav-btn').forEach(btn => {
+                btn.classList.remove('bg-brand-50', 'text-brand-600');
+                btn.classList.add('text-slate-600');
+            });
+
+            const activeBtn = document.getElementById(`nav-${tabId}`);
+            if (activeBtn) {
+                activeBtn.classList.add('bg-brand-50', 'text-brand-600');
+                activeBtn.classList.remove('text-slate-600');
+            }
+
+            // Scroll top
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // Mobile Menu Toggle
+        function toggleMobileMenu() {
+            const menu = document.getElementById('mobile-menu');
+            menu.classList.toggle('hidden');
+        }
+
+        // Category Quick Pill Selection
+        function setCategoryPill(category) {
+            activeCategoryFilter = category;
+            
+            // Update UI Pill styling
+            document.querySelectorAll('.category-pill').forEach(pill => {
+                if (pill.textContent.includes(category) || (category === 'All' && pill.textContent === 'All')) {
+                    pill.classList.remove('bg-slate-100', 'text-slate-600');
+                    pill.classList.add('bg-brand-600', 'text-white');
+                } else {
+                    pill.classList.remove('bg-brand-600', 'text-white');
+                    pill.classList.add('bg-slate-100', 'text-slate-600');
+                }
+            });
+
+            // Update dropdown sync
+            document.getElementById('category-filter').value = category;
+            applyFilters();
+        }
+
+        // Price Label Range Slider Sync
+        function updatePriceLabel(val) {
+            document.getElementById('price-limit-val').textContent = `₹${parseInt(val).toLocaleString('en-IN')}`;
+        }
+
+        // Apply Combined Search and Filter
+        function applyFilters() {
+            const searchText = document.getElementById('search-input').value.toLowerCase().trim();
+            const categoryVal = document.getElementById('category-filter').value;
+            const maxPriceVal = parseInt(document.getElementById('price-filter').value);
+
+            const filtered = sampleListings.filter(item => {
+                const matchesSearch = item.title.toLowerCase().includes(searchText) || 
+                                      item.location.toLowerCase().includes(searchText) ||
+                                      item.sellerName.toLowerCase().includes(searchText);
+                
+                const matchesCategory = (categoryVal === 'All') || (item.category === categoryVal);
+                const matchesPrice = item.sellPrice <= maxPriceVal;
+
+                return matchesSearch && matchesCategory && matchesPrice;
+            });
+
+            renderListings(filtered);
+        }
+
+        // Reset Filters Action
+        function resetFilters() {
+            document.getElementById('search-input').value = '';
+            document.getElementById('category-filter').value = 'All';
+            document.getElementById('price-filter').value = 30000;
+            updatePriceLabel(30000);
+            setCategoryPill('All');
+        }
+
+        // Render Listing Cards into Grid
+        function renderListings(items) {
+            const container = document.getElementById('listings-grid');
+            const emptyState = document.getElementById('empty-state');
+            const resultsCount = document.getElementById('results-count');
+
+            resultsCount.textContent = `${items.length} Available`;
+
+            if (items.length === 0) {
+                container.innerHTML = '';
+                emptyState.classList.remove('hidden');
+                return;
+            } else {
+                emptyState.classList.add('hidden');
+            }
+
+            container.innerHTML = items.map(item => {
+                const discountPct = Math.round(((item.origPrice - item.sellPrice) / item.origPrice) * 100);
+                
+                // Category Icon Map
+                let catIcon = 'fa-tag';
+                if(item.category === 'Hotel') catIcon = 'fa-hotel';
+                if(item.category === 'Bus') catIcon = 'fa-bus';
+                if(item.category === 'Flight') catIcon = 'fa-plane';
+                if(item.category === 'Event') catIcon = 'fa-ticket';
+                if(item.category === 'Package') catIcon = 'fa-umbrella-beach';
+
+                return `
+                    <div class="bg-white rounded-3xl p-5 border border-slate-200 card-hover flex flex-col justify-between space-y-4 relative">
+                        <!-- Top Badges -->
+                        <div class="flex items-center justify-between">
+                            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-brand-50 text-brand-700 border border-brand-100">
+                                <i class="fa-solid ${catIcon}"></i> ${item.category}
+                            </span>
+                            <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800">
+                                <i class="fa-solid fa-bolt"></i> ${discountPct}% OFF
+                            </span>
+                        </div>
+
+                        <!-- Card Body -->
+                        <div class="space-y-2">
+                            <h3 class="font-extrabold text-slate-900 text-base line-clamp-2 leading-snug">${item.title}</h3>
+                            
+                            <div class="flex items-center gap-2 text-xs text-slate-500">
+                                <i class="fa-solid fa-location-dot text-rose-500"></i>
+                                <span>${item.location}</span>
+                            </div>
+
+                            <div class="flex items-center gap-2 text-xs text-slate-500">
+                                <i class="fa-solid fa-calendar text-brand-500"></i>
+                                <span>Valid Date: <strong>${item.date}</strong></span>
+                            </div>
+                        </div>
+
+                        <!-- Transferability Tag -->
+                        <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-100 text-xs flex items-center justify-between">
+                            <span class="text-slate-500">Transfer Type:</span>
+                            <span class="font-semibold text-slate-700"><i class="fa-solid fa-shield-check text-emerald-600 mr-1"></i> ${item.transferType}</span>
+                        </div>
+
+                        <!-- Footer Pricing & CTA -->
+                        <div class="pt-3 border-t border-slate-100 flex items-center justify-between">
+                            <div>
+                                <span class="text-xs text-slate-400 line-through">₹${item.origPrice.toLocaleString('en-IN')}</span>
+                                <div class="text-xl font-black text-slate-900">₹${item.sellPrice.toLocaleString('en-IN')}</div>
+                            </div>
+
+                            <button onclick="openClaimModal('${item.id}')" class="px-4 py-2.5 bg-gradient-to-r from-brand-600 to-brand-700 hover:from-brand-700 hover:to-brand-800 text-white font-bold text-xs rounded-xl shadow-md shadow-brand-500/20 transition-all flex items-center gap-1.5">
+                                <span>Claim Deal</span>
+                                <i class="fa-solid fa-arrow-right"></i>
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Live Discount Calculator in Form
+        function calculateDiscount() {
+            const orig = parseFloat(document.getElementById('form-orig-price').value) || 0;
+            const sell = parseFloat(document.getElementById('form-sell-price').value) || 0;
+            const badge = document.getElementById('form-discount-badge');
+
+            if (orig > 0 && sell > 0 && sell < orig) {
+                const pct = Math.round(((orig - sell) / orig) * 100);
+                badge.textContent = `${pct}% OFF`;
+                badge.className = "h-10 px-3 bg-emerald-100 text-emerald-800 rounded-lg text-xs font-bold flex items-center justify-center border border-emerald-200";
+            } else {
+                badge.textContent = `0% OFF`;
+                badge.className = "h-10 px-3 bg-slate-200 text-slate-600 rounded-lg text-xs font-bold flex items-center justify-center";
+            }
+        }
+
+        // Handle New Listing Form Submission
+        function handleFormSubmit(e) {
+            e.preventDefault();
+
+            const title = document.getElementById('form-title').value;
+            const category = document.getElementById('form-category').value;
+            const date = document.getElementById('form-date').value;
+            const location = document.getElementById('form-location').value;
+            const origPrice = parseFloat(document.getElementById('form-orig-price').value);
+            const sellPrice = parseFloat(document.getElementById('form-sell-price').value);
+            const transferType = document.getElementById('form-transfer-type').value;
+            const contact = document.getElementById('form-contact').value;
+            const notes = document.getElementById('form-notes').value;
+
+            const newListing = {
+                id: 'trip-' + Date.now(),
+                title,
+                category,
+                location,
+                date,
+                origPrice,
+                sellPrice,
+                transferType,
+                sellerName: 'Rohit Kumar (You)',
+                contact,
+                notes,
+                verified: true
+            };
+
+            // Add to dynamic array (beginning)
+            sampleListings.unshift(newListing);
+
+            // Re-render
+            applyFilters();
+            renderMyListings();
+            updateStats();
+
+            // Reset form
+            document.getElementById('listing-form').reset();
+            calculateDiscount();
+
+            // Toast Alert
+            showToast('✅ Listing published successfully! Buyers can now view & claim your trip.', 'success');
+
+            // Switch back to browse section
+            switchTab('browse');
+        }
+
+        // Modal Open & Claim Setup
+        function openClaimModal(id) {
+            const item = sampleListings.find(l => l.id === id);
+            if (!item) return;
+
+            currentModalItem = item;
+
+            // Populate Modal Content
+            document.getElementById('modal-title').textContent = item.title;
+            document.getElementById('modal-category-badge').textContent = item.category;
+            document.getElementById('modal-location').innerHTML = `<i class="fa-solid fa-location-dot text-rose-500 mr-1"></i> ${item.location}`;
+            document.getElementById('modal-orig-price').textContent = `₹${item.origPrice.toLocaleString('en-IN')}`;
+            document.getElementById('modal-sell-price').textContent = `₹${item.sellPrice.toLocaleString('en-IN')}`;
+            
+            const pct = Math.round(((item.origPrice - item.sellPrice) / item.origPrice) * 100);
+            document.getElementById('modal-discount').textContent = `${pct}% OFF`;
+            document.getElementById('modal-seller-name').textContent = item.sellerName;
+            document.getElementById('escrow-locked-amt').textContent = item.sellPrice.toLocaleString('en-IN');
+
+            // Reset Escrow Steps to 1
+            advanceEscrowStep(1);
+
+            // Show Modal
+            document.getElementById('claim-modal').classList.remove('hidden');
+        }
+
+        function closeClaimModal() {
+            document.getElementById('claim-modal').classList.add('hidden');
+        }
+
+        // Advance Escrow Simulator Steps
+        function advanceEscrowStep(stepNum) {
+            // Update Bars
+            for (let i = 1; i <= 3; i++) {
+                const bar = document.getElementById(`step-bar-${i}`);
+                if (i <= stepNum) {
+                    bar.className = 'h-2 rounded-full bg-brand-600 transition-colors';
+                } else {
+                    bar.className = 'h-2 rounded-full bg-slate-200 transition-colors';
+                }
+            }
+
+            // Step Text
+            document.getElementById('escrow-step-text').textContent = `Step ${stepNum} of 3`;
+
+            // Views visibility
+            document.getElementById('step-1-view').classList.add('hidden');
+            document.getElementById('step-2-view').classList.add('hidden');
+            document.getElementById('step-3-view').classList.add('hidden');
+
+            document.getElementById(`step-${stepNum}-view`).classList.remove('hidden');
+
+            if(stepNum === 2) {
+                showToast('🔒 Payment of ₹' + currentModalItem.sellPrice.toLocaleString('en-IN') + ' securely locked in TripRelay Escrow!', 'info');
+            }
+            if(stepNum === 3) {
+                showToast('🎉 Booking Transfer Completed! Funds released to seller.', 'success');
+                updateStats(true);
+            }
+        }
+
+        // Simulate Seller Chat Prompt
+        function simulateSellerChat() {
+            if (!currentModalItem) return;
+            const msg = `Hi ${currentModalItem.sellerName}, I am interested in your ${currentModalItem.title} listed on TripRelay!`;
+            showToast(`💬 Initiating encrypted chat with ${currentModalItem.sellerName}...`, 'info');
+        }
+
+        // Render My Account Listings
+        function renderMyListings() {
+            const container = document.getElementById('my-listings-container');
+            const myList = sampleListings.filter(item => item.sellerName.includes('(You)'));
+
+            if (myList.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-6 text-slate-400 text-xs">
+                        You haven't listed any unused bookings yet. 
+                        <button onclick="switchTab('list')" class="text-brand-600 font-bold underline ml-1">List one now</button>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = myList.map(item => `
+                <div class="p-4 bg-slate-50 rounded-2xl border border-slate-200 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                    <div>
+                        <span class="text-xs font-bold text-brand-600 bg-brand-50 px-2 py-0.5 rounded-md border border-brand-100">${item.category}</span>
+                        <h4 class="font-bold text-slate-900 text-sm mt-1">${item.title}</h4>
+                        <p class="text-xs text-slate-500">Listed Price: <strong>₹${item.sellPrice.toLocaleString('en-IN')}</strong> • Date: ${item.date}</p>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="px-2.5 py-1 bg-emerald-100 text-emerald-800 font-bold text-xs rounded-full">Active</span>
+                        <button onclick="deleteMyListing('${item.id}')" class="p-2 text-rose-500 hover:bg-rose-50 rounded-lg transition-colors text-xs font-semibold">
+                            <i class="fa-solid fa-trash"></i>
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Delete Listing Action
+        function deleteMyListing(id) {
+            sampleListings = sampleListings.filter(l => l.id !== id);
+            applyFilters();
+            renderMyListings();
+            updateStats();
+            showToast('Listing removed successfully', 'info');
+        }
+
+        // Update Header Counter Stats
+        function updateStats(incrementSuccess = false) {
+            const activeCount = sampleListings.length;
+            document.getElementById('stat-active-count').textContent = activeCount;
+        }
+
+        // Custom Toast Notification System
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            
+            let bg = 'bg-slate-900 text-white';
+            if (type === 'success') bg = 'bg-emerald-600 text-white';
+            if (type === 'info') bg = 'bg-brand-600 text-white';
+
+            toast.className = `${bg} px-4 py-3 rounded-2xl shadow-xl text-xs font-bold flex items-center gap-2 transition-all transform translate-y-2 opacity-0 pointer-events-auto max-w-sm`;
+            toast.innerHTML = `<span>${message}</span>`;
+
+            container.appendChild(toast);
+
+            // Animate in
+            requestAnimationFrame(() => {
+                toast.classList.remove('translate-y-2', 'opacity-0');
+            });
+
+            // Auto dismiss
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'translate-y-2');
+                setTimeout(() => toast.remove(), 300);
+            }, 3500);
+        }
+    </script>
+</body>
+</html>
